@@ -1,0 +1,13 @@
+#
+# pd0FileDemonstrator
+#
+
+# To build:
+
+cmake -B build
+cmake --build build
+
+# Once built, to execute:
+
+cd build/bin
+./pd0filedemonstrator <path-to-pd0-file>

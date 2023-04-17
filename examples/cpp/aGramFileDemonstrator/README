@@ -1,0 +1,13 @@
+#
+# aGramFileDemonstrator
+#
+
+# To build:
+
+cmake -B build
+cmake --build build
+
+# Once built, to execute:
+
+cd build/bin
+./agramfiledemonstrator <path-to-agram-file>

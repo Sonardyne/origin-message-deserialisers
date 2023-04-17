@@ -1,0 +1,13 @@
+#
+# bGramFileDemonstrator
+#
+
+# To build:
+
+cmake -B build
+cmake --build build
+
+# Once built, to execute:
+
+cd build/bin
+./bgramfiledemonstrator <path-to-bgram-file>

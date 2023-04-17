@@ -1,0 +1,10 @@
+#
+# README for example MATLAB decoders
+#
+
+# from the MATLAB GUI Command Window:
+# (navigate to this folder in MATLAB first)
+
+aGramFileDemonstrator('/path/to/your/agram/file.agram');
+bGramFileDemonstrator('/path/to/your/bgram/file.bgram');
+pd0FileDemonstrator('/path/to/your/pd0/file.pd0');

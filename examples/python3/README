@@ -1,0 +1,16 @@
+#
+# README for example python decoders
+#
+
+# how to run file-basd applications from terminal command line:
+
+python3 aGramFileDemonstrator.py your_agram_file.agram
+python3 bGramFileDemonstrator.py your_bgram_file.bgram
+python3 pd0FileDemonstrator.py your_pd0_file.pd0
+
+# how to run socket-based applications from terminal command line:
+# (requires ethernet connection to ADCP)
+
+python3 aGramStreamDemonstrator --ip 192.168.179.20 --port 4020
+python3 bGramStreamDemonstrator --ip 192.168.179.20 --port 4011
+python3 pd0StreamDemonstrator --ip 192.168.179.20 --port 4010

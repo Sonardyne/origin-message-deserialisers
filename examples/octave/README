@@ -1,0 +1,21 @@
+#
+# README for example octave decoders
+#
+
+# from the Linux command line:
+# (navigate to this folder first)
+
+# start octave:
+$ octave (type then hit return)
+
+# from the octave command line:
+octave:1> aGramFileDemonstrator('/path/to/your/agram/file.agram');
+octave:1> bGramFileDemonstrator('/path/to/your/bgram/file.bgram');
+octave:1> pd0FileDemonstrator('/path/to/your/pd0/file.pd0');
+
+# from the Octave GUI Command Window:
+# (navigate to this folder in Octave first)
+
+aGramFileDemonstrator('/path/to/your/agram/file.agram');
+bGramFileDemonstrator('/path/to/your/bgram/file.bgram');
+pd0FileDemonstrator('/path/to/your/pd0/file.pd0');

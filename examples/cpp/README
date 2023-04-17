@@ -1,0 +1,24 @@
+#
+# README for example c++ applications to process ADCP data
+#
+
+# build all demonstrators:
+./build_all.sh
+
+# after building, navigate to directories for file application binaries:
+cd aGramFileDemonstrator/build/bin
+cd bGramFileDemonstrator/build/bin
+cd pd0FileDemonstrator/build/bin
+cd aGramStreamDemonstrator/build/bin
+cd bGramStreamDemonstrator/build/bin
+cd pd0StreamDemonstrator/build/bin
+
+# run file applications from command line:
+./agramfiledemonstrator /path/to/your/agram/file.agram
+./bgramfiledemonstrator /path/to/your/bgram/file.bgram
+./pd0filedemonstrator /path/to/your/pd0/file.pd0
+
+# run streaming applications from command line
+./agramstreamdemonstrator 192.168.179.20 4001
+./bgramstreamdemonstrator 192.168.179.20 4002
+./pd0streamdemonstrator 192.168.179.20 4003

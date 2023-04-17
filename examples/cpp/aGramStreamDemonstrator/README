@@ -1,0 +1,13 @@
+#
+# aGramStreamDemonstrator
+#
+
+# To build:
+
+cmake -B build
+cmake --build build
+
+# Once built, to execute:
+
+cd build/bin
+./agramstreamdemonstrator <IP address> <port>

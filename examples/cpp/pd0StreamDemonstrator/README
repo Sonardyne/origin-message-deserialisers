@@ -1,0 +1,13 @@
+#
+# pd0StreamDemonstrator
+#
+
+# To build:
+
+cmake -B build
+cmake --build build
+
+# Once built, to execute:
+
+cd build/bin
+./pd0streamdemonstrator <IP address> <port>
