@@ -25,7 +25,7 @@ classdef RDIVelocity < handle
         function hdr = RDIVelocity()
             
             % wrinkle - assumes execution path of calling function
-            addpath("../../src/maths");
+            addpath("../../src/MATLAB/maths");
 
         end
     
@@ -65,7 +65,7 @@ classdef RDIVelocity < handle
         % 1 = instrument frame
         % 2 = vessel frame
         % 3 = earth frame
-        function transform(obj, ...
+        function obj = transform(obj, ...
                            velocity_frame, ...
                            n_beams, ...
                            n_cells, ...

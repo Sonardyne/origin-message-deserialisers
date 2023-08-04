@@ -143,35 +143,7 @@ classdef PD0Message < handle
             end
                       
         end
-        
-        % method to transform between velocity frames
-        %
-        % Octave does not support enum, so stick to the following convention:
-        %
-        % 0 = beam frame
-        % 1 = instrument frame
-        % 2 = vessel frame
-        % 3 = earth frame
-        function transform(obj, velocity_frame)
-          
-          % access metadata
-          f_l = obj.Fields(RDIFixedLeader.get_id());          
-          f_l.transform(velocity_frame);
-          
-          v_l = obj.Fields(RDIVariableLeader.get_id());
-          
-          % access velocity data
-          obj.Fields(RDIVelocity.get_id()).transform(velocity_frame, ...
-                                                     f_l.NumberOfBeams, ...
-                                                     f_l.NumberOfCells, ...
-                                                     f_l.BeamAngle, ...
-                                                     v_l.RollCD * 0.01, ...
-                                                     v_l.PitchCD * 0.01, ...
-                                                     v_l.HeadingCD * 0.01);
-              
-        end
                 
-        
         % Decode an entire file
         function ensembles = decode_file(obj, filename)
 
@@ -329,6 +301,47 @@ classdef PD0Message < handle
 
 
           
+        end
+
+                % method to transform between velocity frames
+        %
+        % Octave does not support enum, so stick to the following convention:
+        %
+        % 0 = beam frame
+        % 1 = instrument frame
+        % 2 = vessel frame
+        % 3 = earth frame
+        function obj = transform(obj, velocity_frame)
+          
+          % access metadata
+          
+
+          for ensemble_idx=1:length(obj)
+              
+              f_1 = obj(ensemble_idx).Fields(RDIFixedLeader.get_id());
+              number_of_beams = f_1.NumberOfBeams;
+              number_of_cells = f_1.NumberOfCells;
+              beam_angle = f_1.BeamAngle
+              
+              f_1.transform(velocity_frame);
+
+              v_1 = obj(ensemble_idx).Fields(RDIVariableLeader.get_id());
+              RollCD = v_1.RollCD;
+              PitchCD = v_1.PitchCD;
+              HeadingCD = v_1.HeadingCD;
+
+              obj(ensemble_idx).Fields(RDIVelocity.get_id()).transform(velocity_frame, ...
+                                                     number_of_beams, ...
+                                                     number_of_cells, ...
+                                                     beam_angle, ...
+                                                     RollCD * 0.01, ...
+                                                     PitchCD * 0.01, ...
+                                                     HeadingCD * 0.01);
+
+              
+
+          end          
+          % access velocity data              
         end
         
     end

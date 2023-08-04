@@ -1,7 +1,7 @@
 classdef rotation < handle
 
     properties
-            
+        ID = 0
     end
         
     % static methods

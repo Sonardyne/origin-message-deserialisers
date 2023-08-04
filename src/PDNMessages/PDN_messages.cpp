@@ -943,6 +943,29 @@ void RDIVelocity::set(const uint8_t& number_of_beams, const uint8_t& number_of_c
         BeamVelocitiesMms.resize(number_of_beams*number_of_cells);
 }
 
+void RDIVelocity::subtractVelocities(std::vector<float> vesselMotionVelocities, const RDIFixedLeader* cFixedLeader, bool reverse)
+{
+        // index array
+        std::vector<uint16_t> beam_index(cFixedLeader->NumberOfBeams, 0);
+        
+        for (int i = 0; i < cFixedLeader->NumberOfCells; ++i)
+        {
+                int cell_offset = i * cFixedLeader->NumberOfBeams;
+            
+                // first, reset all beams to be beam-frame
+                for (int j = 0; j < cFixedLeader->NumberOfBeams; ++j)
+                {
+                        beam_index[j] = cell_offset + j;
+                        if (!reverse) {
+                                BeamVelocitiesMms[beam_index[j]] -= vesselMotionVelocities[j];
+                        } else {
+                                BeamVelocitiesMms[beam_index[j]] += vesselMotionVelocities[j];
+                        }
+                        
+                }
+        }
+}
+
 void RDIVelocity::transform(const EFrame& eFrame, const RDIFixedLeader* cFixedLeader, const RDIVariableLeader* cVariableLeader)
 {
 
@@ -966,7 +989,7 @@ void RDIVelocity::transform(const EFrame& eFrame, const RDIFixedLeader* cFixedLe
         float cos_roll      = cos((-cVariableLeader->RollCD * 0.01 + 180) * f32DegToRadFactor);
         
         // index array
-        std::vector<uint8_t> beam_index(cFixedLeader->NumberOfBeams, 0);
+        std::vector<uint16_t> beam_index(cFixedLeader->NumberOfBeams, 0);
         
         for (int i = 0; i < cFixedLeader->NumberOfCells; ++i)
         {

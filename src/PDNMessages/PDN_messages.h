@@ -30,7 +30,7 @@ enum EFrame
     VESSEL = 3,
     EARTH = 4
 };
-    
+
 
 class RDIPD0Header : public RDIPD0Interface
 {
@@ -193,7 +193,8 @@ public:
     
     void set(const uint8_t& number_of_beams, const uint8_t& number_of_cells);    
 
-    void transform(const EFrame& eFrame, const RDIFixedLeader* cFixedLeader, const RDIVariableLeader* cVariableLeader);    
+    void transform(const EFrame& eFrame, const RDIFixedLeader* cFixedLeader, const RDIVariableLeader* cVariableLeader);
+    void subtractVelocities(const std::vector<float> vesselMotionVelocities, const RDIFixedLeader* cFixedLeader, bool reverse);
     
     uint8_t _number_of_beams;
     uint8_t _number_of_cells;

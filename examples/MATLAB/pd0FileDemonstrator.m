@@ -3,6 +3,7 @@ function pd0FileDemonstrator(filename)
   fprintf("Reading %s\n", filename);
   
   addpath(genpath('../../src/MATLAB/PDN_messages/'))
+  addpath(genpath('../../src/MATLAB'))
   
   % create a PD0 object
   pd0 = PD0Message();
@@ -29,7 +30,10 @@ function pd0FileDemonstrator(filename)
   end 
   
   % convert an array of PD0 records to arrays of data
+  % transform(0) is beam frame, transform(3) is world frame.
+  ensembles.transform(0)
   data_arrays = pd0.ensembles_to_data_arrays(ensembles, true);  
+
   assignin("base", "data_arrays", data_arrays)
 
 end
