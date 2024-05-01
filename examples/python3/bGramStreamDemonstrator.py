@@ -2,15 +2,15 @@ import socket
 import sys
 import argparse
 import time
-sys.path.insert(1, '../../src/DSPGram/')
+sys.path.insert(1, '../../src/')
 
-from adcp_coredata_messages import *
+from DSPGram.adcp_coredata_messages import *
 
 # interpret command line arguments
 # Creating the parser
 parser = argparse.ArgumentParser()
-parser.add_argument('--ip', type=str, required=True)
-parser.add_argument('--port', type=int, required=True)
+parser.add_argument('--ip', type=str, default="192.168.179.20")
+parser.add_argument('--port', type=int, default=4011)
 # Parsing the argument
 args = parser.parse_args()
 
@@ -27,20 +27,19 @@ sock.connect(server_address)
 
 data = bytearray()
 
-while 1:
+while True:
 
     try:
         print('connected, waiting for ' + str(framesize) + 'bytes')
         data.extend(sock.recv(framesize))
         print('received ' + str(len(data)))
-        if len(data) >= framesize :
+        if len(data) >= framesize:
             ping.deserialise(data[14:framesize])
             ping.show() 
             print('Ping: {!r}'.format(ping.sCommon.u32_PingCounter))
             data = data[framesize:]
 
-
-    except:
+    except Exception:
         time.sleep(3)
         sock.close()
         sock.connect(server_address)

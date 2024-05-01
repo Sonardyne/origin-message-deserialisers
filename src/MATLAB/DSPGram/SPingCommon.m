@@ -99,7 +99,7 @@ classdef SPingCommon
         end
                         
         function obj = deserialise(obj, fid)
-          
+            
             obj.u32_SerialNum           = fread(fid, 1, "uint32");       
             obj.u16_SubSerialNum        = fread(fid, 1, "uint16");
             obj.u16_TypeNum             = fread(fid, 1, "uint16");

@@ -6,26 +6,40 @@
 
 using namespace sonardyne_edge::PDN_messages;
 
-const uint16_t RDIPD0Header::Id          = 0x7F7F;
-const uint16_t RDIFixedLeader::Id        = 0x0000;
-const uint16_t RDIVariableLeader::Id     = 0x0080;
-const uint16_t RDIVelocity::Id           = 0x0100;
-const uint16_t RDIXC::Id                 = 0x0200;
-const uint16_t RDIIntensity::Id          = 0x0300;
-const uint16_t RDIPrctGood::Id           = 0x0400;
-const uint16_t RDIBottomTrack::Id        = 0x0600;
-const uint16_t RDINMEAGGABinary::Id      = 0x2022;
-const uint16_t RDINMEAVTGBinary::Id      = 0x2022;
-const uint16_t RDINMEADBTBinary::Id      = 0x2022;
-const uint16_t RDINMEAHDTBinary::Id      = 0x2022;
-const uint16_t RDINMEAGGAString::Id      = 0x2101;
-const uint16_t RDINMEAVTGString::Id      = 0x2102;
-const uint16_t RDINMEADBTString::Id      = 0x2100;
-const uint16_t RDINMEAHDTString::Id      = 0x2104;
-const uint16_t SONSystemConfig::Id       = 0x6060;
-const uint16_t SONVariableLeader::Id     = 0x6160;
-const uint16_t SONOriginSystemLeader::Id = 0x6201;
-const uint16_t SONPIESVariableLeader::Id = 0x62CA;
+const uint16_t RDIPD0Header::Id             = 0x7F7F;
+const uint16_t RDIFixedLeader::Id           = 0x0000;
+const uint16_t RDIVariableLeader::Id        = 0x0080;
+const uint16_t RDIVelocity::Id              = 0x0100;
+const uint16_t RDIXC::Id                    = 0x0200;
+const uint16_t RDIIntensity::Id             = 0x0300;
+const uint16_t RDIPrctGood::Id              = 0x0400;
+const uint16_t RDIVerticalBeamLeader::Id    = 0x0F01;
+const uint16_t RDIVerticalBeamVelocity::Id  = 0x0A00;
+const uint16_t RDIVerticalBeamXC::Id        = 0x0B00;
+const uint16_t RDIVerticalBeamIntensity::Id = 0x0C00;
+const uint16_t RDIVerticalBeamPrctGood::Id  = 0x0D00;
+const uint16_t RDIBottomTrack::Id           = 0x0600;
+const uint16_t RDINMEAGGABinary::Id         = 0x2022;
+const uint16_t RDINMEAVTGBinary::Id         = 0x2022;
+const uint16_t RDINMEADBTBinary::Id         = 0x2022;
+const uint16_t RDINMEAHDTBinary::Id         = 0x2022;
+const uint16_t RDINMEAGGAString::Id         = 0x2101;
+const uint16_t RDINMEAVTGString::Id         = 0x2102;
+const uint16_t RDINMEADBTString::Id         = 0x2100;
+const uint16_t RDINMEAHDTString::Id         = 0x2104;
+const uint16_t SONSystemConfig::Id          = 0x6060;
+const uint16_t SONVariableLeader::Id        = 0x6160;
+const uint16_t SONOriginSystemLeader::Id    = 0x6201;
+const uint16_t SONPIESVariableLeader::Id    = 0x62CA;
+
+const uint16_t RDINMEAGGABinary::SID    = 104;
+const uint16_t RDINMEAVTGBinary::SID    = 105;
+
+//number of beams fixed at 4 to comply with RDI standard, vertical beam is in separate section
+const uint8_t RDIVelocity::_number_of_beams = 4;
+const uint8_t RDIXC::_number_of_beams = 4;
+const uint8_t RDIPrctGood::_number_of_beams = 4;
+const uint8_t RDIIntensity::_number_of_beams = 4;
 
 void mult3DMatrixVector(const float (&m)[3][3], int16_t (&v)[3])
 {
@@ -80,7 +94,8 @@ RDIPD0Header::RDIPD0Header(const RDIPD0Header& msg) :
         DataSource(msg.DataSource),
         EnsembleBytes(msg.EnsembleBytes),
         Spare(msg.Spare),
-        NumberDataTypes(msg.NumberDataTypes)
+        NumberDataTypes(msg.NumberDataTypes),
+        Indices(msg.Indices)
 {   
 }
 
@@ -132,6 +147,11 @@ int RDIPD0Header::deserialise(const char* buf, const int bytes)
 
         memcpy(&DataSource, buf + offset, sizeof(uint8_t));
         offset += sizeof(uint8_t);
+
+        if((HeaderId != 0x7F) || (DataSource != 0x7F))
+        {
+            return -1; //basic sanity check! must be valid header to deserialise
+        }
 
         memcpy(&EnsembleBytes, buf + offset, sizeof(uint16_t));
         offset += sizeof(uint16_t);
@@ -871,21 +891,18 @@ int RDIVariableLeader::deserialise(const char* buf, const int bytes)
         return (offset > bytes ? -1 : offset);
 }
 
-RDIVelocity::RDIVelocity(uint8_t number_of_beams,
-                         uint8_t number_of_cells) :
-        _number_of_beams(number_of_beams),
+RDIVelocity::RDIVelocity(uint8_t number_of_cells) :
         _number_of_cells(number_of_cells)
 {
-        VelocitiesMms.resize(number_of_beams * number_of_cells);
-        BeamVelocitiesMms.resize(number_of_beams * number_of_cells);
+        VelocitiesMms.resize(_number_of_beams * _number_of_cells);
+        BaseFrameVelocitiesMms.resize(_number_of_beams * _number_of_cells);
 }
 
 
 RDIVelocity::RDIVelocity(const RDIVelocity& msg) :
-        _number_of_beams(msg._number_of_beams),
         _number_of_cells(msg._number_of_cells),
         VelocitiesMms(msg.VelocitiesMms),
-        BeamVelocitiesMms(msg.BeamVelocitiesMms)
+        BaseFrameVelocitiesMms(msg.BaseFrameVelocitiesMms)
 {
     
 }
@@ -929,44 +946,43 @@ int RDIVelocity::deserialise(const char* buf, const int bytes)
         offset += VelocitiesMms.size()*sizeof(int16_t);            
         
         // This should really be dependent on decoded frame of reference
-        BeamVelocitiesMms = VelocitiesMms;
+        BaseFrameVelocitiesMms = VelocitiesMms;
         
         return (offset > bytes ? -1 : offset);
 }
 
-void RDIVelocity::set(const uint8_t& number_of_beams, const uint8_t& number_of_cells)
+void RDIVelocity::set(const uint8_t& number_of_cells)
 {
-        _number_of_beams = number_of_beams;
         _number_of_cells = number_of_cells;
 
-        VelocitiesMms.resize(number_of_beams*number_of_cells);
-        BeamVelocitiesMms.resize(number_of_beams*number_of_cells);
+        VelocitiesMms.resize(_number_of_beams*_number_of_cells);
+        BaseFrameVelocitiesMms.resize(_number_of_beams*_number_of_cells);
 }
 
-void RDIVelocity::subtractVelocities(std::vector<float> vesselMotionVelocities, const RDIFixedLeader* cFixedLeader, bool reverse)
+void RDIVelocity::subtractVelocities(std::vector<float> vesselMotionVelocities, bool reverse)
 {
         // index array
-        std::vector<uint16_t> beam_index(cFixedLeader->NumberOfBeams, 0);
+        std::vector<uint16_t> beam_index(_number_of_beams, 0);
         
-        for (int i = 0; i < cFixedLeader->NumberOfCells; ++i)
+        for (int i = 0; i < _number_of_cells; ++i)
         {
-                int cell_offset = i * cFixedLeader->NumberOfBeams;
+                int cell_offset = i * _number_of_beams;
             
-                // first, reset all beams to be beam-frame
-                for (int j = 0; j < cFixedLeader->NumberOfBeams; ++j)
+                // Subtract vessel motion velocities
+                for (int j = 0; j < _number_of_beams; ++j)
                 {
                         beam_index[j] = cell_offset + j;
                         if (!reverse) {
-                                BeamVelocitiesMms[beam_index[j]] -= vesselMotionVelocities[j];
+                                BaseFrameVelocitiesMms[beam_index[j]] -= vesselMotionVelocities[j];
                         } else {
-                                BeamVelocitiesMms[beam_index[j]] += vesselMotionVelocities[j];
+                                BaseFrameVelocitiesMms[beam_index[j]] += vesselMotionVelocities[j];
                         }
                         
                 }
         }
 }
 
-void RDIVelocity::transform(const EFrame& eFrame, const RDIFixedLeader* cFixedLeader, const RDIVariableLeader* cVariableLeader)
+void RDIVelocity::transform(const EFrame& eFrame, const EFrame& BaseFrame, const RDIFixedLeader* cFixedLeader, const RDIVariableLeader* cVariableLeader)
 {
 
         // factors to convert from beam frame to instrument frame - assumes four beams
@@ -990,112 +1006,105 @@ void RDIVelocity::transform(const EFrame& eFrame, const RDIFixedLeader* cFixedLe
         
         // index array
         std::vector<uint16_t> beam_index(cFixedLeader->NumberOfBeams, 0);
-        
+
+        // we only support transform to frames "above" the base frame in enum order.
+        if (eFrame >= BaseFrame) {
         for (int i = 0; i < cFixedLeader->NumberOfCells; ++i)
         {
                 int cell_offset = i * cFixedLeader->NumberOfBeams;
             
-                // first, reset all beams to be beam-frame
+                // first, reset all beams to be base-frame
                 for (int j = 0; j < cFixedLeader->NumberOfBeams; ++j)
                 {
                         beam_index[j] = cell_offset + j;
 
-                        VelocitiesMms[beam_index[j]] = BeamVelocitiesMms[beam_index[j]];
+                        VelocitiesMms[beam_index[j]] = BaseFrameVelocitiesMms[beam_index[j]];
                 }
                     
-                if (eFrame == EFrame::BEAM)
+                if (BaseFrame == EFrame::BEAM)
                 {
-                        continue;
+                    if (eFrame == EFrame::BEAM)
+                    {
+                            continue;
+                    }
+
+                    // transform to instrument frame
+
+                    if (cFixedLeader->NumberOfBeams > 3 )
+                    {
+
+                            // use beams 1-4 to calculate instrument x, y, z
+                            int16_t vx = c* a * (VelocitiesMms[beam_index[0]] - VelocitiesMms[beam_index[1]]); // 1 - 2
+
+                            int16_t vy = c* a * (VelocitiesMms[beam_index[3]] - VelocitiesMms[beam_index[2]]); // 4 - 3
+
+                            int16_t vz = b *    (VelocitiesMms[beam_index[0]] + VelocitiesMms[beam_index[1]] + 
+                                                 VelocitiesMms[beam_index[2]] + VelocitiesMms[beam_index[3]]); // 1 + 2 + 3 + 4
+
+                            int16_t ve = d *    (VelocitiesMms[beam_index[0]] + VelocitiesMms[beam_index[1]] - 
+                                                 VelocitiesMms[beam_index[2]] - VelocitiesMms[beam_index[3]]); // 1 + 2 - 3 - 4
+
+                            VelocitiesMms[beam_index[0]] = vx;
+                            VelocitiesMms[beam_index[1]] = vy;
+                            VelocitiesMms[beam_index[2]] = vz;
+                            VelocitiesMms[beam_index[3]] = ve;
+                    }
+                }
+                if (BaseFrame < EFrame::VESSEL)
+                {
+                    if (eFrame == EFrame::INSTRUMENT)
+                    {
+                            continue;
+                    }
                 }
 
-                // transform to instrument frame
-            
-                if (cFixedLeader->NumberOfBeams > 3 )
-                {
-
-                        // use beams 1-4 to calculate instrument x, y, z
-                        int16_t vx = c* a * (VelocitiesMms[beam_index[0]] - VelocitiesMms[beam_index[1]]); // 1 - 2
-
-                        int16_t vy = c* a * (VelocitiesMms[beam_index[3]] - VelocitiesMms[beam_index[2]]); // 4 - 3
-
-                        int16_t vz = b *    (VelocitiesMms[beam_index[0]] + VelocitiesMms[beam_index[1]] + 
-                                             VelocitiesMms[beam_index[2]] + VelocitiesMms[beam_index[3]]); // 1 + 2 + 3 + 4
-
-                        int16_t ve = d *    (VelocitiesMms[beam_index[0]] + VelocitiesMms[beam_index[1]] - 
-                                             VelocitiesMms[beam_index[2]] - VelocitiesMms[beam_index[3]]); // 1 + 2 - 3 - 4
-
-                        VelocitiesMms[beam_index[0]] = vx;
-                        VelocitiesMms[beam_index[1]] = vy;
-                        VelocitiesMms[beam_index[2]] = vz;
-                        VelocitiesMms[beam_index[3]] = ve;
-                }
-                
-                if (eFrame == EFrame::INSTRUMENT)
-                {
-                        continue;
-                }
-
-                // transform to vessel - yaw offset only
                 int16_t v[3] = { VelocitiesMms[beam_index[0]], VelocitiesMms[beam_index[1]], VelocitiesMms[beam_index[2]] };
-                ::rotz(cos_yawoffset, sin_yawoffset, v);
 
-                for (int j = 0; j < 3; ++j)
+                if (BaseFrame < EFrame::VESSEL)
                 {
-                        VelocitiesMms[beam_index[j]] = v[j];
+                    // transform to vessel - yaw offset only
+                    //order of rotations depend on sign of yaw offset
+                    ::rotz(cos_yawoffset, sin_yawoffset, v);
+                    ::roty(-1, 0, v); //rotation of 180 degrees about y-axis
+
+                    for (int j = 0; j < 3; ++j)
+                    {
+                            VelocitiesMms[beam_index[j]] = v[j];
+                    }
+
+                    // beam 4 index kept as error velocity
                 }
-
-                // beam 4 index kept as error velocity
-
-                // if present, beam 5 kept as direct measure of vz
-
-                if (eFrame == EFrame::VESSEL)
+                if (BaseFrame < EFrame::EARTH)
                 {
-                        continue;
-                }
+                    if (eFrame == EFrame::VESSEL)
+                    {
+                            continue;
+                    }
             
-
-                // might need a copy of x and y components to rotate 5th beam                
-                int16_t vVesselCopy[3] = { v[0], v[1], v[2]};                
+                    // might need a copy of x and y components to rotate 5th beam                
+                    int16_t vVesselCopy[3] = { v[0], v[1], v[2]};                
                 
-                // transform
-                ::roty(cos_roll,    sin_roll,    v);
-                ::rotx(cos_pitch,   sin_pitch,   v);
-                ::rotz(cos_heading, sin_heading, v);
+                    // transform
+                    ::roty(cos_roll,    sin_roll,    v);
+                    ::rotx(cos_pitch,   sin_pitch,   v);
+                    ::rotz(cos_heading, sin_heading, v);
 
-                for (int j = 0; j < 3; ++j)
-                {
-                        VelocitiesMms[beam_index[j]] = v[j];
+                    for (int j = 0; j < 3; ++j)
+                    {
+                            VelocitiesMms[beam_index[j]] = v[j];
+                    }
                 }
-                
-
-                // beam 4 index kept as error velocity
-
-                if (cFixedLeader->NumberOfBeams == 5)
-                {
-                        // beam 5 transforms by replacing vz in the previous transforms
-                        v[0] = vVesselCopy[0];
-                        v[1] = vVesselCopy[1];
-                        v[2] = VelocitiesMms[beam_index[4]];
-
-                        ::roty(cos_roll,    sin_roll,    v);
-                        ::rotx(cos_pitch,   sin_pitch,   v);
-                        ::rotz(cos_heading, sin_heading, v);
-
-                        VelocitiesMms[beam_index[4]] = v[2];                        
-                }
+        }
         }
 }
 
-RDIXC::RDIXC(uint8_t number_of_beams,
-             uint8_t number_of_cells) :
-        _number_of_beams(number_of_beams),
+RDIXC::RDIXC(uint8_t number_of_cells) :
         _number_of_cells(number_of_cells)
 {
-        BeamXCs.resize(number_of_beams * number_of_cells);
+        BeamXCs.resize(_number_of_beams * _number_of_cells);
 }
 
 RDIXC::RDIXC(const RDIXC& msg) :
-        _number_of_beams(msg._number_of_beams),
         _number_of_cells(msg._number_of_cells),
         BeamXCs(msg.BeamXCs)
 {
@@ -1143,24 +1152,20 @@ int RDIXC::deserialise(const char* buf, const int bytes)
         return (offset > bytes ? -1 : offset);    
 }
 
-void RDIXC::set(const uint8_t& number_of_beams, const uint8_t& number_of_cells)
+void RDIXC::set(const uint8_t& number_of_cells)
 {
-        _number_of_beams = number_of_beams;
         _number_of_cells = number_of_cells;
 
-        BeamXCs.resize(number_of_beams*number_of_cells);
+        BeamXCs.resize(_number_of_beams*_number_of_cells);
 }
 
-RDIIntensity::RDIIntensity(uint8_t number_of_beams,
-                           uint8_t number_of_cells) :
-        _number_of_beams(number_of_beams),
+RDIIntensity::RDIIntensity(uint8_t number_of_cells) :
         _number_of_cells(number_of_cells)
 {
-        BeamIntensities.resize(number_of_beams * number_of_cells);
+        BeamIntensities.resize(_number_of_beams * _number_of_cells);
 }
 
 RDIIntensity::RDIIntensity(const RDIIntensity& msg) :
-        _number_of_beams(msg._number_of_beams),
         _number_of_cells(msg._number_of_cells),
         BeamIntensities(msg.BeamIntensities)
 {
@@ -1208,24 +1213,20 @@ int RDIIntensity::deserialise(const char* buf, const int bytes)
         return (offset > bytes ? -1 : offset);
 }
 
-void RDIIntensity::set(const uint8_t& number_of_beams, const uint8_t& number_of_cells)
+void RDIIntensity::set(const uint8_t& number_of_cells)
 {
-        _number_of_beams = number_of_beams;
         _number_of_cells = number_of_cells;
 
-        BeamIntensities.resize(number_of_beams * number_of_cells);
+        BeamIntensities.resize(_number_of_beams * _number_of_cells);
 }
 
-RDIPrctGood::RDIPrctGood(uint8_t number_of_beams,
-                         uint8_t number_of_cells) :
-        _number_of_beams(number_of_beams),
+RDIPrctGood::RDIPrctGood(uint8_t number_of_cells) :
         _number_of_cells(number_of_cells) 
 {
-        BeamPrctGood.resize(number_of_beams * number_of_cells);
+        BeamPrctGood.resize(_number_of_beams * _number_of_cells);
 }
 
 RDIPrctGood::RDIPrctGood(const RDIPrctGood& msg) :
-        _number_of_beams(msg._number_of_beams),
         _number_of_cells(msg._number_of_cells),
         BeamPrctGood(msg.BeamPrctGood)
 {
@@ -1273,12 +1274,473 @@ int RDIPrctGood::deserialise(const char* buf, const int bytes)
         return (offset > bytes ? -1 : offset);
 }
 
-void RDIPrctGood::set(const uint8_t& number_of_beams, const uint8_t& number_of_cells)
+void RDIPrctGood::set(const uint8_t& number_of_cells)
 {
-        _number_of_beams = number_of_beams;
         _number_of_cells = number_of_cells;
 
-        BeamPrctGood.resize(number_of_beams*number_of_cells);
+        BeamPrctGood.resize(_number_of_beams*_number_of_cells);
+}
+
+RDIVerticalBeamLeader::RDIVerticalBeamLeader() :
+        DepthCells(0),
+        VerticalPings(0),
+        DepthCellSizeCm(0),
+        FirstCellRangeCm(0),
+        VerticalMode(0),
+        VerticalTransmitCm(0),
+        VerticalLagLengthCm(0),
+        TransmitCodeEls(0),
+        VertRSSIThresh(0),
+        VertShallowBin(0),
+        VertStartBin(0),
+        VertShallowRSSIBin(0),
+        MaxCoreThreshold(0),
+        MinCoreThreshold(0),
+        PingOffsetTimeMs(0),
+        Spare1(0),
+        DepthScreen(0),
+        PercentGoodThresh(0),
+        VerticalDOProofing(0)
+{
+
+}
+
+RDIVerticalBeamLeader::RDIVerticalBeamLeader(const RDIVerticalBeamLeader& msg) :
+        DepthCells(msg.DepthCells),
+        VerticalPings(msg.VerticalPings),
+        DepthCellSizeCm(msg.DepthCellSizeCm),
+        FirstCellRangeCm(msg.FirstCellRangeCm),
+        VerticalMode(msg.VerticalMode),
+        VerticalTransmitCm(msg.VerticalTransmitCm),
+        VerticalLagLengthCm(msg.VerticalLagLengthCm),
+        TransmitCodeEls(msg.TransmitCodeEls),
+        VertRSSIThresh(msg.VertRSSIThresh),
+        VertShallowBin(msg.VertShallowBin),
+        VertStartBin(msg.VertStartBin),
+        VertShallowRSSIBin(msg.VertShallowRSSIBin),
+        MaxCoreThreshold(msg.MaxCoreThreshold),
+        MinCoreThreshold(msg.MinCoreThreshold),
+        PingOffsetTimeMs(msg.PingOffsetTimeMs),
+        Spare1(msg.Spare1),
+        DepthScreen(msg.DepthScreen),
+        PercentGoodThresh(msg.PercentGoodThresh),
+        VerticalDOProofing(msg.VerticalDOProofing)
+{
+
+}
+
+RDIVerticalBeamLeader::~RDIVerticalBeamLeader()
+{
+
+}
+
+size_t RDIVerticalBeamLeader::calc_length() const
+{
+    // PD0 fields binary by default
+    return SIZE_BYTES;
+}
+
+int RDIVerticalBeamLeader::serialise(char* buf, const int bytes) const
+{
+    int offset = 0;
+
+    memcpy(buf + offset, &VerticalBeamLeaderID, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &DepthCells, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &VerticalPings, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &DepthCellSizeCm, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &FirstCellRangeCm, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &VerticalMode, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &VerticalTransmitCm, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &VerticalLagLengthCm, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &TransmitCodeEls, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &VertRSSIThresh, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &VertShallowBin, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &VertStartBin, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &VertShallowRSSIBin, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &MaxCoreThreshold, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &MinCoreThreshold, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &PingOffsetTimeMs, sizeof(int16_t));
+    offset += sizeof(int16_t);
+
+    memcpy(buf + offset, &Spare1, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &DepthScreen, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &PercentGoodThresh, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(buf + offset, &VerticalDOProofing, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    return (offset > bytes ? -1 : offset);
+}
+
+int RDIVerticalBeamLeader::deserialise(const char* buf, const int bytes)
+{
+    int offset = 0;
+
+    // ID is const
+    offset += sizeof(uint16_t);
+
+    memcpy(&DepthCells, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&VerticalPings, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&DepthCellSizeCm, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&FirstCellRangeCm, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&VerticalMode, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&VerticalTransmitCm, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&VerticalLagLengthCm, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&TransmitCodeEls, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&VertRSSIThresh, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&VertShallowBin, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&VertStartBin, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&VertShallowRSSIBin, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&MaxCoreThreshold, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&MinCoreThreshold, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&PingOffsetTimeMs, buf + offset, sizeof(int16_t));
+    offset += sizeof(int16_t);
+
+    memcpy(&Spare1, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&DepthScreen, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&PercentGoodThresh, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    memcpy(&VerticalDOProofing, buf + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    return (offset > bytes ? -1 : offset);
+}
+
+RDIVerticalBeamVelocity::RDIVerticalBeamVelocity(uint8_t number_of_cells) :
+    _number_of_cells(number_of_cells)
+{
+    VelocitiesMms.resize(_number_of_cells);
+    BaseFrameVelocitiesMms.resize(_number_of_cells);
+}
+
+RDIVerticalBeamVelocity::RDIVerticalBeamVelocity(const RDIVerticalBeamVelocity &msg) :
+    _number_of_cells(msg._number_of_cells),
+    VelocitiesMms(msg.VelocitiesMms),
+    BaseFrameVelocitiesMms(msg.BaseFrameVelocitiesMms)
+{
+
+}
+
+RDIVerticalBeamVelocity::~RDIVerticalBeamVelocity()
+{
+
+}
+
+size_t RDIVerticalBeamVelocity::calc_length() const
+{
+    int size = 0;
+
+    size += sizeof(Header);
+    size += VelocitiesMms.size()*sizeof(int16_t);
+
+    return size;
+}
+
+int RDIVerticalBeamVelocity::serialise(char *buf, const int bytes) const
+{
+    int offset = 0;
+
+    memcpy(buf + offset, &Header, sizeof(Header));
+    offset += sizeof(Header);
+
+    memcpy(buf + offset, VelocitiesMms.data(), VelocitiesMms.size()*sizeof(int16_t));
+    offset += VelocitiesMms.size()*sizeof(int16_t);
+
+    return (offset > bytes ? -1 : offset);
+}
+
+int RDIVerticalBeamVelocity::deserialise(const char *buf, const int bytes)
+{
+    int offset = 0;
+
+    // ID is const
+    offset += sizeof(Header);
+
+    memcpy(&VelocitiesMms[0], buf + offset, _number_of_cells * sizeof(int16_t));
+    offset += VelocitiesMms.size()*sizeof(int16_t);
+
+    BaseFrameVelocitiesMms = VelocitiesMms;
+
+    return (offset > bytes ? -1 : offset);
+}
+
+void RDIVerticalBeamVelocity::set(const uint8_t &number_of_cells)
+{
+    _number_of_cells = number_of_cells;
+
+    VelocitiesMms.resize(_number_of_cells);
+    BaseFrameVelocitiesMms.resize(_number_of_cells);
+}
+
+std::vector<int16_t>& RDIVerticalBeamVelocity::get_BeamVelocitiesMms()
+{
+    return BaseFrameVelocitiesMms;
+}
+
+RDIVerticalBeamXC::RDIVerticalBeamXC(uint8_t number_of_cells) :
+    _number_of_cells(number_of_cells)
+{
+    BeamXCs.resize(_number_of_cells);
+}
+
+RDIVerticalBeamXC::RDIVerticalBeamXC(const RDIVerticalBeamXC& msg) :
+        _number_of_cells(msg._number_of_cells),
+        BeamXCs(msg.BeamXCs)
+{
+
+}
+
+RDIVerticalBeamXC::~RDIVerticalBeamXC()
+{
+
+}
+
+size_t RDIVerticalBeamXC::calc_length() const
+{
+    int size = 0;
+
+    size += sizeof(Header);
+    size += BeamXCs.size()*sizeof(uint8_t);
+
+    return size;
+}
+
+int RDIVerticalBeamXC::serialise(char* buf, const int bytes) const
+{
+    int offset = 0;
+
+    memcpy(buf + offset, &Header, sizeof(Header));
+    offset += sizeof(Header);
+
+    memcpy(buf + offset, BeamXCs.data(), BeamXCs.size()*sizeof(uint8_t));
+    offset += BeamXCs.size()*sizeof(uint8_t);
+
+    return (offset > bytes ? -1 : offset);
+}
+
+int RDIVerticalBeamXC::deserialise(const char* buf, const int bytes)
+{
+    int offset = 0;
+
+    // ID is const
+    offset += sizeof(Header);
+
+    memcpy(&BeamXCs[0], buf + offset, _number_of_cells * sizeof(uint8_t));
+    offset += BeamXCs.size()*sizeof(uint8_t);
+
+    return (offset > bytes ? -1 : offset);
+}
+
+void RDIVerticalBeamXC::set(const uint8_t& number_of_cells)
+{
+    _number_of_cells = number_of_cells;
+
+    BeamXCs.resize(number_of_cells);
+}
+
+std::vector<uint8_t>& RDIVerticalBeamXC::get_BeamXCs()
+{
+    return BeamXCs;
+}
+
+RDIVerticalBeamIntensity::RDIVerticalBeamIntensity(uint8_t number_of_cells) :
+    _number_of_cells(number_of_cells)
+{
+    BeamIntensities.resize(_number_of_cells);
+}
+
+RDIVerticalBeamIntensity::RDIVerticalBeamIntensity(const RDIVerticalBeamIntensity &msg) :
+    _number_of_cells(msg._number_of_cells),
+    BeamIntensities(msg.BeamIntensities)
+{
+
+}
+
+RDIVerticalBeamIntensity::~RDIVerticalBeamIntensity()
+{
+
+}
+
+size_t RDIVerticalBeamIntensity::calc_length() const
+{
+    int size = 0;
+
+    size += sizeof(Header);
+    size += BeamIntensities.size()*sizeof(uint8_t);
+
+    return size;
+}
+
+int RDIVerticalBeamIntensity::serialise(char *buf, const int bytes) const
+{
+    int offset = 0;
+
+    memcpy(buf + offset, &Header, sizeof(Header));
+    offset += sizeof(Header);
+
+    memcpy(buf + offset, BeamIntensities.data(), BeamIntensities.size()*sizeof(uint8_t));
+    offset += BeamIntensities.size()*sizeof(uint8_t);
+
+    return (offset > bytes ? -1 : offset);
+}
+
+int RDIVerticalBeamIntensity::deserialise(const char* buf, const int bytes)
+{
+    int offset = 0;
+
+    // ID is const
+    offset += sizeof(Header);
+
+    memcpy(&BeamIntensities[0], buf + offset, _number_of_cells * sizeof(uint8_t));
+    offset += BeamIntensities.size()*sizeof(uint8_t);
+
+    return (offset > bytes ? -1 : offset);
+}
+
+void RDIVerticalBeamIntensity::set(const uint8_t& number_of_cells)
+{
+    _number_of_cells = number_of_cells;
+
+    BeamIntensities.resize(_number_of_cells);
+}
+
+std::vector<uint8_t>& RDIVerticalBeamIntensity::get_BeamIntensities()
+{
+    return BeamIntensities;
+}
+
+RDIVerticalBeamPrctGood::RDIVerticalBeamPrctGood(uint8_t number_of_cells) :
+    _number_of_cells(number_of_cells)
+{
+    BeamPrctGood.resize(_number_of_cells);
+}
+
+RDIVerticalBeamPrctGood::RDIVerticalBeamPrctGood(const RDIVerticalBeamPrctGood &msg) :
+        _number_of_cells(msg._number_of_cells),
+        BeamPrctGood(msg.BeamPrctGood)
+{
+
+}
+
+RDIVerticalBeamPrctGood::~RDIVerticalBeamPrctGood()
+{
+
+}
+
+size_t RDIVerticalBeamPrctGood::calc_length() const
+{
+    int size = 0;
+
+    size += sizeof(Header);
+    size += BeamPrctGood.size()*sizeof(uint8_t);
+
+    return size;
+}
+
+int RDIVerticalBeamPrctGood::serialise(char *buf, const int bytes) const
+{
+    int offset = 0;
+
+    memcpy(buf + offset, &Header, sizeof(Header));
+    offset += sizeof(Header);
+
+    memcpy(buf + offset, BeamPrctGood.data(), BeamPrctGood.size()*sizeof(uint8_t));
+    offset += BeamPrctGood.size()*sizeof(uint8_t);
+
+    return (offset > bytes ? -1 : offset);
+}
+
+int RDIVerticalBeamPrctGood::deserialise(const char* buf, const int bytes)
+{
+    int offset = 0;
+
+    // ID is const
+    offset += sizeof(Header);
+
+    memcpy(&BeamPrctGood[0], buf + offset, _number_of_cells * sizeof(uint8_t));
+    offset += BeamPrctGood.size()*sizeof(uint8_t);
+
+    return (offset > bytes ? -1 : offset);
+}
+
+void RDIVerticalBeamPrctGood::set(const uint8_t& number_of_cells)
+{
+    _number_of_cells = number_of_cells;
+
+    BeamPrctGood.resize(_number_of_cells);
+}
+
+std::vector<uint8_t>& RDIVerticalBeamPrctGood::get_BeamPrctGood()
+{
+    return BeamPrctGood;
 }
 
 RDIBottomTrack::RDIBottomTrack() :
@@ -1788,9 +2250,23 @@ RDINMEAGGABinary::RDINMEAGGABinary()
 }
 
 
-RDINMEAGGABinary::RDINMEAGGABinary(const RDINMEAGGABinary& msg)
+RDINMEAGGABinary::RDINMEAGGABinary(const RDINMEAGGABinary& msg):
+        dLatitude(msg.dLatitude),
+        tcNS(msg.tcNS),
+        dLongitude(msg.dLongitude),
+        tcEW(msg.tcEW),
+        ucQuality(msg.ucQuality),
+        ucNmbSat(msg.ucNmbSat),
+        fHDOP(msg.fHDOP),
+        fAltitude(msg.fAltitude),
+        tcAltUnit(msg.tcAltUnit),
+        fGeoid(msg.fGeoid),
+        tcGeoidIUnit(msg.tcGeoidIUnit),
+        fAgeDGPS(msg.fAgeDGPS),
+        sRefStationId(msg.sRefStationId)
 {
-    
+    memcpy(szHeader, msg.szHeader, sizeof(msg.szHeader));
+    memcpy(szUTC, msg.szUTC, sizeof(msg.szUTC));
 }
 
 RDINMEAGGABinary::~RDINMEAGGABinary()
@@ -1981,9 +2457,18 @@ RDINMEAVTGBinary::RDINMEAVTGBinary()
 {
 }
 
-RDINMEAVTGBinary::RDINMEAVTGBinary(const RDINMEAVTGBinary& msg)
+RDINMEAVTGBinary::RDINMEAVTGBinary(const RDINMEAVTGBinary& msg) :
+    fCOGTrue(msg.fCOGTrue),
+    tcTrueIndicator(msg.tcTrueIndicator),
+    fCOGMag(msg.fCOGMag),
+    tcMagnIndicator(msg.tcMagnIndicator),
+    fSpdOverGroundKts(msg.fSpdOverGroundKts),
+    tcKtsIndicator(msg.tcKtsIndicator),
+    fSpdOverGroundKmh(msg.fSpdOverGroundKmh),
+    tcKmhIndicator(msg.tcKmhIndicator),
+    tcModeIndicator(msg.tcModeIndicator)
 {
-    
+    memcpy(szHeader, msg.szHeader, sizeof(msg.szHeader));
 }
 
 RDINMEAVTGBinary::~RDINMEAVTGBinary()
@@ -3143,21 +3628,53 @@ PD0Message::PD0Message()
     add_section(new RDIPD0Header());
 }
 
-PD0Message::PD0Message(const PD0Message& orig)
+//copy constructor
+PD0Message::PD0Message(const PD0Message& orig):
+    Checksum(orig.Checksum),
+    Reserved(orig.Reserved),
+    BaseFrame(orig.BaseFrame)
 {
-    
+    //need to populate ma_Fields structure
+    clone_all_sections(orig);
+}
+
+//copy assignment - do we need this?
+PD0Message& PD0Message::operator=(const PD0Message& orig)
+{
+    Checksum = orig.Checksum;
+    Reserved = orig.Reserved;
+    BaseFrame = orig.BaseFrame;
+    if(&orig != this) {
+        delete_all_sections();
+        clone_all_sections(orig);
+    }
+    return *this;
 }
 
 PD0Message::~PD0Message()
 {
-        for (fields_it_t it = ma_Fields.begin(); it != ma_Fields.end(); ++it)
+    delete_all_sections();
+}
+
+void PD0Message::delete_all_sections()
+{
+    for (fields_it_t it = ma_Fields.begin(); it != ma_Fields.end(); ++it)
+    {
+        if (it->second)
         {
-            if (it->second)
-            {
-                delete it->second;
-                it->second = NULL;
-            }
-        }    
+            delete it->second;
+            it->second = NULL;
+        }
+    }
+}
+
+void PD0Message::clone_all_sections(const PD0Message& orig)
+{
+    for (auto it = orig.ma_Fields.begin(); it != orig.ma_Fields.end(); ++it) {
+        if (it->second) {
+            ma_Fields[it->first] = (it->second)->clone();
+        }
+    }
 }
 
 bool PD0Message::section_present(const uint16_t& Id)
@@ -3315,6 +3832,24 @@ int PD0Message::serialise(char* buf, const int bytes) const
         return offset;    
 }
 
+EFrame PD0Message::byte_to_eframe(uint8_t n)
+{
+    uint8_t masked_and_shifted = (n >> 3) & 3;
+    if (masked_and_shifted == 0)
+    return EFrame::BEAM;
+
+    if (masked_and_shifted == 1)
+    return EFrame::INSTRUMENT;
+
+    if (masked_and_shifted == 2)
+    return EFrame::VESSEL;
+
+    if (masked_and_shifted == 3)
+    return EFrame::EARTH;
+
+    return EFrame::EARTH;
+}
+
 int PD0Message::deserialise(const char* buf, const int bytes)
 {
         int offset = 0;    
@@ -3331,8 +3866,13 @@ int PD0Message::deserialise(const char* buf, const int bytes)
 
         if (hdr)
         {
-                offset += hdr->deserialise(buf, bytes);   
-
+                int ret = hdr->deserialise(buf, bytes);
+                if(ret == -1)
+                {
+                    printf("%s Exit due to invalid header section\n", __PRETTY_FUNCTION__);
+                    return -1;
+                }
+                offset += ret;
                 // create a local copy of the indices - this allows the add_section function
                 // to be used on a pre-existing ensemble
                 std::vector<uint16_t> Indices = hdr->Indices;
@@ -3355,7 +3895,7 @@ int PD0Message::deserialise(const char* buf, const int bytes)
                         // Look for codes here
                         if (code == RDIFixedLeader::Id) // fixed leader
                         {
-                            section = new RDIFixedLeader();                
+                            section = new RDIFixedLeader();
                         }
                         else if (code == RDIVariableLeader::Id) // variable leader
                         {
@@ -3364,22 +3904,46 @@ int PD0Message::deserialise(const char* buf, const int bytes)
                         else if (code == RDIVelocity::Id && section_present(RDIFixedLeader::Id)) // velocity data 
                         {
                             RDIFixedLeader* fixed_leader = (RDIFixedLeader*) ma_Fields.at(RDIFixedLeader::Id);
-                            section = new RDIVelocity(fixed_leader->NumberOfBeams, fixed_leader->NumberOfCells);                             
+                            section = new RDIVelocity(fixed_leader->NumberOfCells);
                         }
                         else if (code == RDIXC::Id && section_present(RDIFixedLeader::Id)) // XC magnitude data 
                         {
                             RDIFixedLeader* fixed_leader = (RDIFixedLeader*) ma_Fields.at(RDIFixedLeader::Id);
-                            section = new RDIXC(fixed_leader->NumberOfBeams, fixed_leader->NumberOfCells);
+                            section = new RDIXC(fixed_leader->NumberOfCells);
                         }
                         else if (code == RDIIntensity::Id && section_present(RDIFixedLeader::Id)) // Echo Intensity data 
                         {
                             RDIFixedLeader* fixed_leader = (RDIFixedLeader*) ma_Fields.at(RDIFixedLeader::Id);
-                            section = new RDIIntensity(fixed_leader->NumberOfBeams, fixed_leader->NumberOfCells);
+                            section = new RDIIntensity(fixed_leader->NumberOfCells);
                         }
                         else if (code == RDIPrctGood::Id && section_present(RDIFixedLeader::Id)) // percentage good data 
                         {
                             RDIFixedLeader* fixed_leader = (RDIFixedLeader*) ma_Fields.at(RDIFixedLeader::Id);
-                            section = new RDIPrctGood(fixed_leader->NumberOfBeams, fixed_leader->NumberOfCells);
+                            section = new RDIPrctGood(fixed_leader->NumberOfCells);
+                        }
+                        else if (code == RDIVerticalBeamLeader::Id)
+                        {
+                            section = new RDIVerticalBeamLeader();
+                        }
+                        else if (code == RDIVerticalBeamVelocity::Id && section_present(RDIFixedLeader::Id))
+                        {
+                            RDIFixedLeader* fixed_leader = (RDIFixedLeader*) ma_Fields.at(RDIFixedLeader::Id);
+                            section = new RDIVerticalBeamVelocity(fixed_leader->NumberOfCells);
+                        }
+                        else if (code == RDIVerticalBeamXC::Id && section_present(RDIFixedLeader::Id))
+                        {
+                            RDIFixedLeader* fixed_leader = (RDIFixedLeader*) ma_Fields.at(RDIFixedLeader::Id);
+                            section = new RDIVerticalBeamXC(fixed_leader->NumberOfCells);
+                        }
+                        else if (code == RDIVerticalBeamIntensity::Id && section_present(RDIFixedLeader::Id))
+                        {
+                            RDIFixedLeader* fixed_leader = (RDIFixedLeader*) ma_Fields.at(RDIFixedLeader::Id);
+                            section = new RDIVerticalBeamIntensity(fixed_leader->NumberOfCells);
+                        }
+                        else if (code == RDIVerticalBeamPrctGood::Id && section_present(RDIFixedLeader::Id))
+                        {
+                            RDIFixedLeader* fixed_leader = (RDIFixedLeader*) ma_Fields.at(RDIFixedLeader::Id);
+                            section = new RDIVerticalBeamPrctGood(fixed_leader->NumberOfCells);
                         }
                         else if (code == RDIBottomTrack::Id) // bottom track data 
                         {
@@ -3461,20 +4025,24 @@ int PD0Message::deserialise(const char* buf, const int bytes)
                         
                         if (section)
                         {
-                            if(Indices[k] + section->calc_length() >= bytes)
-                            {
-                                //corrupt file - bad indices
-                                printf("%s Exit due to invalid section size\n", __PRETTY_FUNCTION__);
-                                return -1;
-                            }
-                            int bytes_deserialised = section->deserialise(buf + Indices[k], section->calc_length());
-                            
-                            offset += bytes_deserialised;
-                            
-                            if (standard_section)
-                            {
-                                add_section(section);
-                            }
+                                if(Indices[k] + section->calc_length() >= bytes)
+                                {
+                                    //corrupt file - bad indices
+                                    printf("%s Exit due to invalid section size\n", __PRETTY_FUNCTION__);
+                                    return -1;
+                                }
+                                int bytes_deserialised = section->deserialise(buf + Indices[k], section->calc_length());
+
+                                offset += bytes_deserialised;
+                                if (code == RDIFixedLeader::Id) // fixed leader
+                                 {
+                                    RDIFixedLeader*    pcFixedLeader     = (RDIFixedLeader*) section;
+                                    BaseFrame = byte_to_eframe(pcFixedLeader->CoordTxfrm);
+                                 }
+                                if (standard_section)
+                                {
+                                    add_section(section);
+                                }
                         }
                 }
 
@@ -3484,7 +4052,7 @@ int PD0Message::deserialise(const char* buf, const int bytes)
             // calculate checksum
             memcpy(&Checksum, buf + offset, sizeof(Checksum));
             //uint16_t checksum = calc_checksum(buf, offset);
-			calc_checksum(buf, offset);
+			calc_checksum(buf, offset); // why is this here? should we compare?
 
             // compare
 
@@ -3492,6 +4060,16 @@ int PD0Message::deserialise(const char* buf, const int bytes)
         }
         
         return offset;
+}
+
+std::vector<uint16_t> PD0Message::get_all_fields_ids()
+{
+    std::vector<uint16_t> fields_ids;
+	for (auto const& x : ma_Fields)
+	{
+		fields_ids.emplace_back(x.first);
+	}
+    return fields_ids;
 }
 
 void PD0Message::transform(const EFrame& eFrame)
@@ -3504,7 +4082,13 @@ void PD0Message::transform(const EFrame& eFrame)
         {
             return;
         }
-        
+
+        if (eFrame <= EFrame::EARTH)
+        {
+            // perform transformations
+            pcVelocity->transform(eFrame, BaseFrame, pcFixedLeader, pcVariableLeader);
+        }
+
         // set the frame in the fixed leader
         pcFixedLeader->CoordTxfrm = 0;
         
@@ -3526,13 +4110,6 @@ void PD0Message::transform(const EFrame& eFrame)
             pcFixedLeader->CoordTxfrm |= (1 << 3);
             pcFixedLeader->CoordTxfrm |= (1 << 4);
         }
-        else
-        {
-            return;
-        }
-        
-        
-        // perform transformations
-        pcVelocity->transform(eFrame, pcFixedLeader, pcVariableLeader);
         
 }
+

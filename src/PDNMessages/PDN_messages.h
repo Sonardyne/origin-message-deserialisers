@@ -39,8 +39,9 @@ public:
     RDIPD0Header(const RDIPD0Header& msg);
     virtual ~RDIPD0Header();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDIPD0Header * clone() const { return new RDIPD0Header(*this); };
     uint16_t get_ID() const { return Id; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;
@@ -67,8 +68,8 @@ public:
     RDIFixedLeader(const RDIFixedLeader& msg);
     virtual ~RDIFixedLeader();
     
-    static const uint16_t Id;    
-
+    static const uint16_t Id;
+    RDIFixedLeader * clone() const { return new RDIFixedLeader(*this); };
     uint16_t get_ID() const { return FixedLeaderID; }    
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;
@@ -121,8 +122,9 @@ public:
     RDIVariableLeader(const RDIVariableLeader& msg);
     virtual ~RDIVariableLeader();
   
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDIVariableLeader * clone() const { return new RDIVariableLeader(*this); };
     uint16_t get_ID() const { return VariableLeaderID; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -179,52 +181,52 @@ public:
 class RDIVelocity : public RDIPD0Interface
 {
 public:
-    RDIVelocity(uint8_t number_of_beams = 0,
-                uint8_t number_of_cells = 0);
+    RDIVelocity(uint8_t number_of_cells = 0);
     RDIVelocity(const RDIVelocity& msg);
     virtual ~RDIVelocity();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDIVelocity * clone() const { return new RDIVelocity(*this); };
     uint16_t get_ID() const { return Header; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
     int deserialise(const char* buf, const int bytes);    
     
-    void set(const uint8_t& number_of_beams, const uint8_t& number_of_cells);    
+    void set(const uint8_t& number_of_cells);
 
-    void transform(const EFrame& eFrame, const RDIFixedLeader* cFixedLeader, const RDIVariableLeader* cVariableLeader);
-    void subtractVelocities(const std::vector<float> vesselMotionVelocities, const RDIFixedLeader* cFixedLeader, bool reverse);
-    
-    uint8_t _number_of_beams;
+    void transform(const EFrame& eFrame, const EFrame& BaseFrame, const RDIFixedLeader* cFixedLeader, const RDIVariableLeader* cVariableLeader);
+    void subtractVelocities(const std::vector<float> vesselMotionVelocities, bool reverse);
+
+    static const uint8_t _number_of_beams; //Fixed to 4 in RDI standard
     uint8_t _number_of_cells;
     
     const uint16_t Header = Id;
     std::vector<int16_t> VelocitiesMms;
 
 //private:
-    std::vector<int16_t> BeamVelocitiesMms; // always keep these as a transform to another frame of reference will destroy the beam information
+    std::vector<int16_t> BaseFrameVelocitiesMms; // always keep these as a transform to another frame of reference will destroy the beam information
     
 };
 
 class RDIXC : public RDIPD0Interface
 {
 public:
-    RDIXC(uint8_t number_of_beams,
-          uint8_t number_of_cells);
+    RDIXC(uint8_t number_of_cells);
     RDIXC(const RDIXC& msg);
     virtual ~RDIXC();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDIXC * clone() const { return new RDIXC(*this); };
     uint16_t get_ID() const { return Header; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
     int deserialise(const char* buf, const int bytes);    
     
-    void set(const uint8_t& number_of_beams, const uint8_t& number_of_cells);    
-    
-    uint8_t _number_of_beams;
+    void set(const uint8_t& number_of_cells);
+
+    static const uint8_t _number_of_beams; //fixed to 4 in RDI standard
     uint8_t _number_of_cells;
     
     const uint16_t Header = Id;
@@ -234,22 +236,22 @@ public:
 class RDIIntensity : public RDIPD0Interface
 {
 public:
-    RDIIntensity(uint8_t number_of_beams,
-                 uint8_t number_of_cells);
+    RDIIntensity(uint8_t number_of_cells);
     RDIIntensity(const RDIIntensity& msg);
     virtual ~RDIIntensity();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDIIntensity * clone() const { return new RDIIntensity(*this); };
     uint16_t get_ID() const { return Header; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
     int deserialise(const char* buf, const int bytes);    
     
-    void set(const uint8_t& number_of_beams, const uint8_t& number_of_cells);    
+    void set(const uint8_t& number_of_cells);
     std::vector<uint8_t>& get_BeamIntensities();
-    
-    uint8_t _number_of_beams;
+
+    static const uint8_t _number_of_beams; //Fixed to 4 in RDI standard
     uint8_t _number_of_cells;
     
     const uint16_t Header = Id;
@@ -259,23 +261,159 @@ public:
 class RDIPrctGood : public RDIPD0Interface
 {
 public:
-    RDIPrctGood(uint8_t number_of_beams,
-                uint8_t number_of_cells);
+    RDIPrctGood(uint8_t number_of_cells);
     RDIPrctGood(const RDIPrctGood& msg);
     virtual ~RDIPrctGood();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDIPrctGood * clone() const { return new RDIPrctGood(*this); };
     uint16_t get_ID() const { return Header; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
     int deserialise(const char* buf, const int bytes);    
     
-    void set(const uint8_t& number_of_beams, const uint8_t& number_of_cells);    
-    
-    uint8_t _number_of_beams;
+    void set(const uint8_t& number_of_cells);
+
+    static const uint8_t _number_of_beams; //Fixed to 4 in RDI standard
     uint8_t _number_of_cells;
     
+    const uint16_t Header = Id;
+    std::vector<uint8_t> BeamPrctGood;
+};
+
+class RDIVerticalBeamLeader : public RDIPD0Interface
+{
+public:
+    RDIVerticalBeamLeader();
+    RDIVerticalBeamLeader(const RDIVerticalBeamLeader& msg);
+    virtual ~RDIVerticalBeamLeader();
+
+    static const uint16_t Id;
+
+    RDIVerticalBeamLeader * clone() const { return new RDIVerticalBeamLeader(*this); };
+    uint16_t get_ID() const { return VerticalBeamLeaderID; }
+    size_t calc_length() const;
+    int serialise(char* buf, const int bytes) const;
+    int deserialise(const char* buf, const int bytes);
+
+    static const int SIZE_BYTES = 40;
+
+    const uint16_t VerticalBeamLeaderID = Id;   // 2
+    uint16_t DepthCells;                        // 4
+    uint16_t VerticalPings;                     // 6
+    uint16_t DepthCellSizeCm;                   // 8
+    uint16_t FirstCellRangeCm;                  // 10
+    uint16_t VerticalMode;                      // 12
+    uint16_t VerticalTransmitCm;                // 14
+    uint16_t VerticalLagLengthCm;               // 16
+    uint16_t TransmitCodeEls;                   // 18
+    uint16_t VertRSSIThresh;                    // 20
+    uint16_t VertShallowBin;                    // 22
+    uint16_t VertStartBin;                      // 24
+    uint16_t VertShallowRSSIBin;                // 26
+    uint16_t MaxCoreThreshold;                  // 28
+    uint16_t MinCoreThreshold;                  // 30
+    int16_t  PingOffsetTimeMs;                  // 32
+    uint16_t Spare1;                            // 34
+    uint16_t DepthScreen;                       // 36
+    uint16_t PercentGoodThresh;                 // 38
+    uint16_t VerticalDOProofing;                // 40
+};
+
+class RDIVerticalBeamVelocity : public RDIPD0Interface
+{
+public:
+    RDIVerticalBeamVelocity(uint8_t number_of_cells = 0);
+    RDIVerticalBeamVelocity(const RDIVerticalBeamVelocity& msg);
+    virtual ~RDIVerticalBeamVelocity();
+
+    static const uint16_t Id;
+
+    RDIVerticalBeamVelocity * clone() const { return new RDIVerticalBeamVelocity(*this); };
+    uint16_t get_ID() const { return Header; }
+    size_t calc_length() const;
+    int serialise(char* buf, const int bytes) const;
+    int deserialise(const char* buf, const int bytes);
+
+    void set(const uint8_t& number_of_cells);
+    std::vector<int16_t>& get_BeamVelocitiesMms();
+
+    uint8_t _number_of_cells;
+
+    const uint16_t Header = Id;
+    std::vector<int16_t> VelocitiesMms;
+    std::vector<int16_t> BaseFrameVelocitiesMms; // always keep these as a transform to another frame of reference will destroy the beam information
+};
+
+class RDIVerticalBeamXC : public RDIPD0Interface
+{
+public:
+    RDIVerticalBeamXC(uint8_t number_of_cells);
+    RDIVerticalBeamXC(const RDIVerticalBeamXC& msg);
+    virtual ~RDIVerticalBeamXC();
+
+    static const uint16_t Id;
+
+    RDIVerticalBeamXC * clone() const { return new RDIVerticalBeamXC(*this); };
+    uint16_t get_ID() const { return Header; }
+    size_t calc_length() const;
+    int serialise(char* buf, const int bytes) const;
+    int deserialise(const char* buf, const int bytes);
+
+    void set(const uint8_t& number_of_cells);
+    std::vector<uint8_t>& get_BeamXCs();
+
+    uint8_t _number_of_cells;
+
+    const uint16_t Header = Id;
+    std::vector<uint8_t> BeamXCs;
+};
+
+class RDIVerticalBeamIntensity : public RDIPD0Interface
+{
+public:
+    RDIVerticalBeamIntensity(uint8_t number_of_cells);
+    RDIVerticalBeamIntensity(const RDIVerticalBeamIntensity& msg);
+    virtual ~RDIVerticalBeamIntensity();
+
+    static const uint16_t Id;
+
+    RDIVerticalBeamIntensity * clone() const { return new RDIVerticalBeamIntensity(*this); };
+    uint16_t get_ID() const { return Header; }
+    size_t calc_length() const;
+    int serialise(char* buf, const int bytes) const;
+    int deserialise(const char* buf, const int bytes);
+
+    void set(const uint8_t& number_of_cells);
+    std::vector<uint8_t>& get_BeamIntensities();
+
+    uint8_t _number_of_cells;
+
+    const uint16_t Header = Id;
+    std::vector<uint8_t> BeamIntensities;
+};
+
+class RDIVerticalBeamPrctGood : public RDIPD0Interface
+{
+public:
+    RDIVerticalBeamPrctGood(uint8_t number_of_cells);
+    RDIVerticalBeamPrctGood(const RDIVerticalBeamPrctGood& msg);
+    virtual ~RDIVerticalBeamPrctGood();
+
+    static const uint16_t Id;
+
+    RDIVerticalBeamPrctGood * clone() const { return new RDIVerticalBeamPrctGood(*this); };
+    uint16_t get_ID() const { return Header; }
+    size_t calc_length() const;
+    int serialise(char* buf, const int bytes) const;
+    int deserialise(const char* buf, const int bytes);
+
+    void set(const uint8_t& number_of_cells);
+    std::vector<uint8_t>& get_BeamPrctGood();
+
+    uint8_t _number_of_cells;
+
     const uint16_t Header = Id;
     std::vector<uint8_t> BeamPrctGood;
 };
@@ -287,10 +425,11 @@ public:
     RDIBottomTrack(const RDIBottomTrack& msg);
     virtual ~RDIBottomTrack();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDIBottomTrack * clone() const { return new RDIBottomTrack(*this); };
     uint16_t get_ID() const { return BottomTrackID; }
-    size_t calc_length() const;
+        size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
     int deserialise(const char* buf, const int bytes);    
     
@@ -369,8 +508,9 @@ public:
     RDINMEAGGABinary(const RDINMEAGGABinary& msg);
     virtual ~RDINMEAGGABinary();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDINMEAGGABinary * clone() const { return new RDINMEAGGABinary(*this); };
     uint16_t get_ID() const { return SID; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -380,7 +520,7 @@ public:
     static const int      SZ_HEADER_BYTES = 7;
     static const int      SZ_UTC_BYTES = 10;
 
-    static const uint16_t SID = 104;
+    static const uint16_t SID;
     
     const uint16_t IdCode = Id;     // 
     char szHeader[SZ_HEADER_BYTES]; // 7
@@ -407,8 +547,9 @@ public:
     RDINMEAGGAString(const RDINMEAGGAString& msg);
     virtual ~RDINMEAGGAString();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDINMEAGGAString * clone() const { return new RDINMEAGGAString(*this); };
     uint16_t get_ID() const { return IdCode; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -432,8 +573,9 @@ public:
     RDINMEAVTGBinary(const RDINMEAVTGBinary& msg);
     virtual ~RDINMEAVTGBinary();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDINMEAVTGBinary * clone() const { return new RDINMEAVTGBinary(*this); };
     uint16_t get_ID() const { return SID; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -442,7 +584,7 @@ public:
     static const uint16_t SIZE_BYTES = 42;        
     static const int      SZ_HEADER_BYTES = 7;
 
-    static const uint16_t SID = 105;
+    static const uint16_t SID;
     
     const uint16_t IdCode = Id;
     char szHeader[SZ_HEADER_BYTES];
@@ -464,8 +606,9 @@ public:
     RDINMEAVTGString(const RDINMEAVTGString& msg);
     virtual ~RDINMEAVTGString();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDINMEAVTGString * clone() const { return new RDINMEAVTGString(*this); };
     uint16_t get_ID() const { return IdCode; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -489,8 +632,9 @@ public:
     RDINMEADBTBinary(const RDINMEADBTBinary& msg);
     virtual ~RDINMEADBTBinary();
     
-    static const uint16_t Id;    
-    
+    static const uint16_t Id;
+
+    RDINMEADBTBinary * clone() const { return new RDINMEADBTBinary(*this); };
     uint16_t get_ID() const { return SID; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -518,8 +662,9 @@ public:
     RDINMEADBTString(const RDINMEADBTString& msg);
     virtual ~RDINMEADBTString();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDINMEADBTString * clone() const { return new RDINMEADBTString(*this); };
     uint16_t get_ID() const { return IdCode; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -543,8 +688,9 @@ public:
     RDINMEAHDTBinary(const RDINMEAHDTBinary& msg);
     virtual ~RDINMEAHDTBinary();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDINMEAHDTBinary * clone() const { return new RDINMEAHDTBinary(*this); };
     uint16_t get_ID() const { return SID; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -574,8 +720,9 @@ public:
     
     static const int MESSAGE_INDEX = 15;
 
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    RDINMEAHDTString * clone() const { return new RDINMEAHDTString(*this); };
     uint16_t get_ID() const { return IdCode; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -598,8 +745,9 @@ public:
     SONSystemConfig(const SONSystemConfig& msg);
     virtual ~SONSystemConfig();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    SONSystemConfig * clone() const { return new SONSystemConfig(*this); };
     uint16_t get_ID() const { return IdCode; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -632,8 +780,9 @@ public:
     SONVariableLeader(const SONVariableLeader& msg);
     virtual ~SONVariableLeader();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    SONVariableLeader * clone() const { return new SONVariableLeader(*this); };
     uint16_t get_ID() const { return IdCode; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -669,8 +818,9 @@ public:
     SONOriginSystemLeader(const SONOriginSystemLeader& msg);
     virtual ~SONOriginSystemLeader();
 
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    SONOriginSystemLeader * clone() const { return new SONOriginSystemLeader(*this); };
     uint16_t get_ID() const { return IdCode; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -712,8 +862,9 @@ public:
     SONPIESVariableLeader(const SONPIESVariableLeader& msg);
     virtual ~SONPIESVariableLeader();
     
-    static const uint16_t Id;    
+    static const uint16_t Id;
 
+    SONPIESVariableLeader * clone() const { return new SONPIESVariableLeader(*this); };
     uint16_t get_ID() const { return IdCode; }
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
@@ -744,11 +895,14 @@ private:
 
 };
 
+//NOTE: add_section does not update indices in header implicitly.
+//header indices are updated on de/serialisation.
 class PD0Message
 {
 public:
     PD0Message();
     PD0Message(const PD0Message& orig);
+    PD0Message& operator=(const PD0Message& other);
     virtual ~PD0Message();
 
     void add_section(RDIPD0Interface* pd0_section);    
@@ -756,11 +910,13 @@ public:
     size_t calc_length() const;
     int serialise(char* buf, const int bytes) const;    
     int deserialise(const char* buf, const int bytes);    
-           
+    
+    std::vector<uint16_t> get_all_fields_ids();
     void transform(const EFrame& eFrame);
     
     uint16_t Reserved;
     uint16_t Checksum;
+
 
     static const int RESERVED_SIZE_BYTES = sizeof(uint16_t);
     static const int CHECKSUM_SIZE_BYTES = sizeof(uint16_t);
@@ -770,10 +926,14 @@ private:
     bool section_present(const uint16_t& Id);        
     uint16_t calc_checksum(const char* buf, const int& buf_size_bytes) const;
     std::vector<uint16_t> calc_indices() const;
+    void delete_all_sections();
+    void clone_all_sections(const PD0Message& orig);
+    EFrame byte_to_eframe(uint8_t n);
 
     typedef std::map<uint16_t, RDIPD0Interface*>::iterator fields_it_t;
     typedef std::map<uint16_t, RDIPD0Interface*>::const_iterator fields_cit_t;
     std::map<uint16_t, RDIPD0Interface*> ma_Fields;
+    EFrame BaseFrame;
 };
 
 }

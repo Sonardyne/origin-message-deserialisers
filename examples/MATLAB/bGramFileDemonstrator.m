@@ -8,7 +8,7 @@ function bGramFileDemonstrator(filename)
   bgram = SDSP_v1_0_BDGram();
   
   % decode the file of bgrams
-  ensembles = bgram.decode_file(filename, 1);
+  ensembles = bgram.decode_file(filename);
 
   % access a few fields from the first bgram
   no_beams     = ensembles(1).sCommon.u16_NoBeams;

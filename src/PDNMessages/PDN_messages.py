@@ -964,6 +964,376 @@ class RDIPrctGood(RDIPD0Interface):
             s = str(self.PrctGood[i])
             print(s)
 
+
+class RDIVerticalBeamLeader(RDIPD0Interface):
+
+    SIZE_BYTES = 40
+    ID         = 0x0F01
+
+    def __init__(self):
+        self.HeaderId = self.ID
+        self.DepthCells = 0
+        self.VerticalPings = 0
+        self.DepthCellSizeCm = 0
+        self.FirstCellRangeCm = 0
+        self.VerticalMode = 0
+        self.VerticalTransmitCm = 0
+        self.VerticalLagLengthCm = 0
+        self.TransmitCodeEls = 0
+        self.VertRSSIThresh = 0
+        self.VertShallowBin = 0
+        self.VertStartBin = 0
+        self.VertShallowRSSIBin = 0
+        self.MaxCoreThreshold = 0
+        self.MinCoreThreshold = 0
+        self.PingOffsetTimeMs = 0
+        self.Spare1 = 0
+        self.DepthScreen = 0
+        self.PercentGoodThresh = 0
+        self.VerticalDOProofing = 0
+
+    def get_id(self):
+        return self.ID
+
+    def calc_length(self):
+        return self.SIZE_BYTES
+
+    def serialise(self, buf):
+
+        struct.pack_into('H', buf, 0,  self.HeaderId)
+
+        struct.pack_into('H', buf, 2,  self.DepthCells)
+        struct.pack_into('H', buf, 4,  self.VerticalPings)
+        struct.pack_into('H', buf, 6,  self.DepthCellSizeCm)
+        struct.pack_into('H', buf, 8,  self.FirstCellRangeCm)
+        struct.pack_into('H', buf, 10,  self.VerticalMode)
+        struct.pack_into('H', buf, 12,  self.VerticalTransmitCm)
+        struct.pack_into('H', buf, 14,  self.VerticalLagLengthCm)
+        struct.pack_into('H', buf, 16, self.TransmitCodeEls)
+        struct.pack_into('H', buf, 18, self.VertRSSIThresh)
+        struct.pack_into('H', buf, 20, self.VertShallowBin)
+        struct.pack_into('H', buf, 22, self.VertStartBin)
+        struct.pack_into('H', buf, 24, self.VertShallowRSSIBin)
+        struct.pack_into('H', buf, 26, self.MaxCoreThreshold)
+        struct.pack_into('H', buf, 28, self.MinCoreThreshold)
+        struct.pack_into('h', buf, 30, self.PingOffsetTimeMs)
+        struct.pack_into('H', buf, 32, self.Spare1)
+        struct.pack_into('H', buf, 34, self.DepthScreen)
+        struct.pack_into('H', buf, 36, self.PercentGoodThresh)
+        struct.pack_into('H', buf, 38, self.VerticalDOProofing)
+
+        return self.SIZE_BYTES
+
+    def deserialise(self, buf):
+
+        offset = 0
+
+        headerId = struct.unpack("H", buf[offset : offset + 2])[0]
+
+        if headerId != self.HeaderId:
+            return -1
+
+        offset += 2
+
+        self.DepthCells = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.VerticalPings = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.DepthCellSizeCm = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.FirstCellRangeCm = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.VerticalMode = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.VerticalTransmitCm = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.VerticalLagLengthCm = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.TransmitCodeEls = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.VertRSSIThresh = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.VertShallowBin = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.VertStartBin = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.VertShallowRSSIBin = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.MaxCoreThreshold = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.MinCoreThreshold = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.PingOffsetTimeMs = struct.unpack("h", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.Spare1 = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.DepthScreen = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.PercentGoodThresh = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        self.VerticalDOProofing = struct.unpack("H", buf[offset : offset + 2])[0]
+        offset += 2
+
+        return offset
+
+    def show(self):
+        print("--- RDI PD0 Vertical Beam Leader ---")
+        #TODO
+
+
+class RDIVerticalBeamVelocity(RDIPD0Interface):
+
+    ID = 0x0A00
+
+    def __init__(self):
+        self.HeaderId = self.ID
+        self.NumCells           = 0
+        self.BeamVelocitiesMms  = array.array('h')
+        self.VelocitiesMms      = array.array('h')
+
+    def set(self, NumCells):
+        self.NumCells       = NumCells
+        self.BeamVelocitiesMms = [-32768] * NumCells
+        self.VelocitiesMms     = [-32768] * NumCells
+
+    def get_id(self):
+        return self.ID
+
+    def calc_length(self):
+        return (2 + 2 * self.NumCells)
+
+    def serialise(self, buf):
+
+        offset = 0
+
+        struct.pack_into('H', buf, offset,  self.HeaderId)
+
+        offset += 2
+
+        for i in range(self.NumCells):
+            struct.pack_into('h', buf, offset, self.BeamVelocitiesMms[i])
+            offset += 2
+
+        return (2 + 2 * self.NumCells)
+
+    def deserialise(self, buf):
+
+        offset = 0
+
+        headerId = int.from_bytes(buf[0:2], byteorder='little')
+
+        if headerId != self.HeaderId:
+            return -1
+
+        offset += 2
+
+        for i in range(self.NumCells):
+            self.BeamVelocitiesMms[i] = struct.unpack("h", buf[offset : offset + 2])[0]
+
+            self.VelocitiesMms[i]     = self.BeamVelocitiesMms[i]
+            offset += 2
+
+        return offset
+
+    def show(self):
+        print("--- RDI PD0 Vertical Beam Velocities ---")
+        print("Cells: " + str(self.NumCells))
+        for i in range(self.NumCells):
+            s = str(self.VelocitiesMms[i])
+            print(s)
+
+
+class RDIVerticalBeamXC(RDIPD0Interface):
+
+    ID = 0x0B00
+
+    def __init__(self):
+        self.HeaderId = self.ID
+        self.XC = array.array('B')
+        self.NumCells = 0
+
+    def set(self, NumCells):
+        self.NumCells = NumCells
+        self.XC       = [0] * NumCells
+
+    def get_id(self):
+        return self.ID
+
+    def calc_length(self):
+        return (2 + self.NumCells)
+
+    def serialise(self, buf):
+
+        offset = 0
+
+        struct.pack_into('H', buf, offset, self.HeaderId)
+
+        offset += 2
+
+        for i in range(self.NumCells):
+            struct.pack_into('B', buf, offset, self.XC[i])
+            offset += 1
+
+        return (2 + self.NumCells)
+
+    def deserialise(self, buf):
+
+        offset = 0
+
+        headerId = int.from_bytes(buf[0:2], byteorder='little')
+
+        if headerId != self.HeaderId:
+            return -1
+
+        offset += 2
+
+        for i in range(self.NumCells):
+            self.XC[i] = struct.unpack("B", buf[offset : offset + 1])[0]
+            offset += 1
+
+        return offset
+
+    def show(self):
+        print("--- RDI PD0 Vertical Beam XC ---")
+        print("Cells: " + str(self.NumCells))
+        for i in range(self.NumCells):
+            s = str(self.XC[i])
+            print(s)
+
+class RDIVerticalBeamIntensity(RDIPD0Interface):
+
+    ID = 0x0C00
+
+    def __init__(self):
+        self.HeaderId = self.ID
+        self.Intensities = array.array('B')
+        self.NumCells = 0
+
+    def set(self, NumCells):
+        self.NumCells    = NumCells
+        self.Intensities = [0] * NumCells
+
+    def get_id(self):
+        return self.ID
+
+    def calc_length(self):
+        return (2 + self.NumCells)
+
+    def serialise(self, buf):
+
+        offset = 0
+
+        struct.pack_into('H', buf, offset, self.HeaderId)
+
+        offset += 2
+
+        for i in range(self.NumCells):
+            struct.pack_into('B', buf, offset, self.Intensities[i])
+            offset += 1
+
+        return (2 + self.NumCells)
+
+    def deserialise(self, buf):
+
+        offset = 0
+
+        headerId = int.from_bytes(buf[0:2], byteorder='little')
+
+        if headerId != self.HeaderId:
+            return -1
+
+        offset += 2
+
+        for i in range(self.NumCells):
+            self.Intensities[i] = struct.unpack("B", buf[offset : offset + 1])[0]
+            offset += 1
+
+        return offset
+
+    def show(self):
+        print("--- RDI PD0 Vertical Beam Intensities ---")
+        print("Cells: " + str(self.NumCells))
+        for i in range(self.NumCells):
+            s = str(self.Intensities[i])
+            print(s)
+
+
+class RDIVerticalBeamPrctGood(RDIPD0Interface):
+
+    ID = 0x0D00
+
+    def __init__(self):
+        self.HeaderId = self.ID
+        self.PrctGood = array.array('B')
+        self.NumCells = 0
+
+    def set(self, NumCells):
+        self.NumCells = NumCells
+        self.PrctGood = [0] * NumCells
+
+    def get_id(self):
+        return self.ID
+
+    def calc_length(self):
+        return (2 + self.NumCells)
+
+    def serialise(self, buf):
+
+        offset = 0
+
+        struct.pack_into('H', buf, offset, self.HeaderId)
+
+        offset += 2
+
+        for i in range(self.NumCells):
+            struct.pack_into('B', buf, offset, self.PrctGood[i])
+            offset += 1
+
+        return (2 + self.NumCells)
+
+    def deserialise(self, buf):
+
+        offset = 0
+
+        headerId = int.from_bytes(buf[0:2], byteorder='little')
+
+        if headerId != self.HeaderId:
+            return -1
+
+        offset += 2
+
+        for i in range(self.NumCells):
+            self.PrctGood[i] = struct.unpack("B", buf[offset : offset + 1])[0]
+            offset += 1
+
+        return offset
+
+    def show(self):
+        print("--- RDI PD0 Vertical Beam PrctGood ---")
+        print("Cells: " + str(self.NumCells))
+        for i in range(self.NumCells):
+            s = str(self.PrctGood[i])
+            print(s)
+
+
 class RDIBottomTrack(RDIPD0Interface):
 
     SIZE_BYTES = 85
@@ -1326,7 +1696,7 @@ class RDINMEAGGABinary(RDIPD0Interface):
         self.fAltitude = 0
         self.tcAltUnit = 0
         self.fGeoid = 0
-        self.tcGeoidUnit = 0
+        self.tcGeoidIUnit = 0
         self.fAgeDGPS = 0
         self.sRefStationId = 0
 
@@ -2317,7 +2687,26 @@ class PD0Message:
                 RDIInterface = RDIPrctGood()
                 RDIInterface.set(self.Fields[RDIFixedLeader.ID].NumberOfBeams, 
                                  self.Fields[RDIFixedLeader.ID].NumberOfCells)
-            
+
+            elif (headerId == RDIVerticalBeamLeader.ID):
+                RDIInterface = RDIVerticalBeamLeader()
+
+            elif (headerId == RDIVerticalBeamVelocity.ID):
+                RDIInterface = RDIVerticalBeamVelocity()
+                RDIInterface.set(self.Fields[RDIFixedLeader.ID].NumberOfCells)
+
+            elif (headerId == RDIVerticalBeamIntensity.ID):
+                RDIInterface = RDIVerticalBeamIntensity()
+                RDIInterface.set(self.Fields[RDIFixedLeader.ID].NumberOfCells)
+
+            elif (headerId == RDIVerticalBeamXC.ID):
+                RDIInterface = RDIVerticalBeamXC()
+                RDIInterface.set(self.Fields[RDIFixedLeader.ID].NumberOfCells)
+
+            elif (headerId == RDIVerticalBeamPrctGood.ID):
+                RDIInterface = RDIVerticalBeamPrctGood()
+                RDIInterface.set(self.Fields[RDIFixedLeader.ID].NumberOfCells)
+
             elif (headerId == RDIBottomTrack.ID):                         
                 RDIInterface = RDIBottomTrack()
         
@@ -2456,7 +2845,7 @@ class SONPIESVariableLeader(RDIPD0Interface):
         self.Pressure_kPa = 0
         self.Depth_m = 0
         self.Zoffset_m = 0
-        self.Latitdue_DD = 0
+        self.Latitude_DD = 0
         self.Patmos_kPa = 0
         self.TimeNS = 0
 
@@ -2484,7 +2873,7 @@ class SONPIESVariableLeader(RDIPD0Interface):
         struct.pack_into('f', buf, 46,  self.Pressure_kPa)
         struct.pack_into('f', buf, 50,  self.Depth_m)
         struct.pack_into('f', buf, 54,  self.Zoffset_m)
-        struct.pack_into('f', buf, 58,  self.Latitdue_DD)
+        struct.pack_into('f', buf, 58,  self.Latitude_DD)
         struct.pack_into('f', buf, 62,  self.Patmos_kPa)
         struct.pack_into('Q', buf, 66,  self.TimeNS)
 
@@ -2542,7 +2931,7 @@ class SONPIESVariableLeader(RDIPD0Interface):
         self.Zoffset_m = struct.unpack("f", buf[offset : offset + 4])[0]
         offset += 4
 
-        self.Latitdue_kPa = struct.unpack("f", buf[offset : offset + 4])[0]
+        self.Latitude_DD = struct.unpack("f", buf[offset : offset + 4])[0]
         offset += 4
 
         self.Patmos_kPa = struct.unpack("f", buf[offset : offset + 4])[0]
@@ -2554,8 +2943,7 @@ class SONPIESVariableLeader(RDIPD0Interface):
         return offset
 
     def show(self):
-        print("--- SONVPIESariableLeader ---")
-        self.ciT_PIESRequestTime.show()
+        print("--- SONPIESVariableLeader ---")
         print("SV1:    " + str(self.SV1_ms))
         print("SV2:    " + str(self.SV2_ms))
         print("TOF1:    " + str(self.TOF1_s))

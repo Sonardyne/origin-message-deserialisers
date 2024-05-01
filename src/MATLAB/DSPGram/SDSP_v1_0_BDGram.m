@@ -38,7 +38,7 @@ classdef SDSP_v1_0_BDGram < handle
         function obj = deserialise(obj, fid)
             header = fread(fid, 14, "uint8");
                 
-            obj.sCommon                 = obj.sCommon.deserialise(fid);        
+            obj.sCommon                 = obj.sCommon.deserialise(fid);  
             obj.eProcessingStatus       = fread(fid, 1, "uint16");
             obj.u16_SampleBitDepth      = fread(fid, 1, "uint16");
             obj.u16_StartBin            = fread(fid, 1, "uint16");
@@ -49,7 +49,7 @@ classdef SDSP_v1_0_BDGram < handle
         end 
         
         % Decode an entire file
-            function output_bgrams = decode_file(obj, filename, Ndecimation)
+            function output_bgrams = decode_file(obj, filename)
 
             % open bgram file at the beginning
             fid = fopen(filename, 'r');
@@ -62,7 +62,6 @@ classdef SDSP_v1_0_BDGram < handle
              % decode 1st bgram to figure out # beams
             bgram = SDSP_v1_0_BDGram;
             bgram.deserialise(fid);
-            
             NumberOfBeams = bgram.sCommon.u16_NoBeams;
             
             fseek(fid, 0,'bof');
@@ -70,7 +69,7 @@ classdef SDSP_v1_0_BDGram < handle
             % calculate # agrams in file
             BgramSizeBytes = 14 + bgram.calc_length();
             
-            NumberOfBgrams = file_size_bytes ./ BgramSizeBytes;            
+            NumberOfBgrams = file_size_bytes ./ BgramSizeBytes        
           
             NumberOfPings = NumberOfBgrams / NumberOfBeams;            
                         
@@ -81,15 +80,6 @@ classdef SDSP_v1_0_BDGram < handle
             parse_started = 0;
             k = 1;
             while (ftell(fid) < file_size_bytes)
-
-                % decimate if requested
-                if parse_started == 1 && mod(numel(output_bgrams), NumberOfBeams) == 0 
-                  
-                  position = Ndecimation * NumberOfBeams * BgramSizeBytes;
-                  fseek(fid, position, 'cof');
-                  
-                end
-            
                 bgram = SDSP_v1_0_BDGram;
                 bgram.deserialise(fid);
 
@@ -217,6 +207,7 @@ classdef SDSP_v1_0_BDGram < handle
               data_arrays.SIGBC(i)        = ensembles((i - 1) * NumberOfBeams + 1).sCommon.u16_SIG_BaseCounts;
               data_arrays.SIGBT(i)        = ensembles((i - 1) * NumberOfBeams + 1).sCommon.u16_SIG_BT;
               ciT_EventStartTime          = ensembles((i - 1) * NumberOfBeams + 1).sCommon.ciT_EventStartTime;
+
               data_arrays.EventTime_s(i)  = ciT_EventStartTime.u32_seconds + ciT_EventStartTime.u32_microseconds .* 1e-6;
               
               for k = 1:NumberOfBeams

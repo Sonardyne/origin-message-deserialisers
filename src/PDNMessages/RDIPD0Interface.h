@@ -14,11 +14,11 @@ class RDIPD0Interface
 public:
     
     virtual ~RDIPD0Interface() {}
-    
-    virtual std::uint16_t get_ID() const = 0;
-    virtual std::size_t   calc_length() const = 0;
-    virtual int           serialise(char* buf, const int bytes) const = 0;
-    virtual int           deserialise(const char* buf, const int bytes) = 0;    
+    virtual RDIPD0Interface* clone() const = 0;
+    virtual std::uint16_t    get_ID() const = 0;
+    virtual std::size_t      calc_length() const = 0;
+    virtual int              serialise(char* buf, const int bytes) const = 0;
+    virtual int              deserialise(const char* buf, const int bytes) = 0;
 
 };
 

@@ -102,7 +102,36 @@ classdef PD0Message < handle
                 s.deserialise(fid, nBeams, nCells);            
                 obj.Fields(code) = s;
 
+              elseif code == RDIVerticalBeamLeader.get_id()
+              
+                s = RDIVerticalBeamLeader();
+                s.deserialise(fid);
+                obj.Fields(code) = s;
+
+              elseif code == RDIVerticalBeamVelocity.get_id()
+              
+                s = RDIVerticalBeamVelocity();
+                s.deserialise(fid, nCells);
+                obj.Fields(code) = s;
                 
+              elseif code == RDIVerticalBeamIntensity.get_id()
+              
+                s = RDIVerticalBeamIntensity();
+                s.deserialise(fid, nCells);
+                obj.Fields(code) = s;
+
+              elseif code == RDIVerticalBeamXC.get_id()
+              
+                s = RDIVerticalBeamXC();
+                s.deserialise(fid, nCells);
+                obj.Fields(code) = s;
+                
+              elseif code == RDIVerticalBeamPrctGood.get_id()
+              
+                s = RDIVerticalBeamPrctGood();
+                s.deserialise(fid, nCells);
+                obj.Fields(code) = s;
+
               elseif code == PIESVariableLeader.get_id()
 
                 s = PIESVariableLeader();
@@ -167,7 +196,7 @@ classdef PD0Message < handle
           
         end
         
-        function data_arrays = ensembles_to_data_arrays(obj, ensembles, mask)
+        function data_arrays = ensembles_to_data_arrays(obj, ensembles)
           
             data_arrays = [];
               
@@ -283,23 +312,6 @@ classdef PD0Message < handle
                 
             end
         
-        if mask == true
-
-            depth_m = (data_arrays.pressurePa - 100000) / (1025 * 9.81) * 100;
-            first_index_offset = depth_m - data_arrays.Bin1DistanceCM;
-            depth_index = fix(first_index_offset / DepthCellLengthCM);
-
-            for i = 1:length(depth_index)
-
-                data_arrays.Intensities(:,i,depth_index(i):end) = nan;
-                data_arrays.XC(:,i,depth_index(i):end) = nan;
-                data_arrays.VelocitiesMms(:,i,depth_index(i):end) = nan;
-                data_arrays.PrctGood(:,i,depth_index(i):end) = nan;
-            end
-        end
-
-
-
           
         end
 
@@ -317,26 +329,31 @@ classdef PD0Message < handle
           
 
           for ensemble_idx=1:length(obj)
-              
+
+              % extract fixed leader          
               f_1 = obj(ensemble_idx).Fields(RDIFixedLeader.get_id());
               number_of_beams = f_1.NumberOfBeams;
               number_of_cells = f_1.NumberOfCells;
-              beam_angle = f_1.BeamAngle
+              beam_angle      = f_1.BeamAngle;
               
-              f_1.transform(velocity_frame);
-
+              % extract variable leader
               v_1 = obj(ensemble_idx).Fields(RDIVariableLeader.get_id());
-              RollCD = v_1.RollCD;
-              PitchCD = v_1.PitchCD;
+              RollCD    = v_1.RollCD;
+              PitchCD   = v_1.PitchCD;
               HeadingCD = v_1.HeadingCD;
 
-              obj(ensemble_idx).Fields(RDIVelocity.get_id()).transform(velocity_frame, ...
-                                                     number_of_beams, ...
-                                                     number_of_cells, ...
-                                                     beam_angle, ...
-                                                     RollCD * 0.01, ...
-                                                     PitchCD * 0.01, ...
-                                                     HeadingCD * 0.01);
+              % extract velocities
+              vel = obj(ensemble_idx).Fields(RDIVelocity.get_id());
+
+              % transform
+              f_1.transform(velocity_frame);
+              vel.transform(velocity_frame, ...
+                            number_of_beams, ...
+                            number_of_cells, ...
+                            beam_angle, ...
+                            RollCD * 0.01, ...
+                            PitchCD * 0.01, ...
+                            HeadingCD * 0.01);
 
               
 

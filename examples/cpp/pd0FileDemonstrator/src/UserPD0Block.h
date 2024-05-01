@@ -16,6 +16,7 @@ public:
     UserPD0Block(const UserPD0Block& orig);
     virtual ~UserPD0Block();
 
+    UserPD0Block * clone() const { return new UserPD0Block(*this); };
     size_t calc_length() const;
     uint16_t get_ID() const;
     int serialise(char* buf, const int bytes) const;

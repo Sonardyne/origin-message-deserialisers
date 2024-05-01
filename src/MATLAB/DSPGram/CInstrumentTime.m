@@ -20,9 +20,8 @@ classdef CInstrumentTime < handle
         end
         
         function deserialise(obj, fid)
-            
-            obj.u32_seconds      = fread(fid, 1, "uint32");        
-            obj.u32_microseconds = fread(fid, 1, "uint32");
+            obj.u32_seconds      = fread(fid, 1, "uint32",'n');    
+            obj.u32_microseconds = fread(fid, 1, "uint32",'n');
         
         end    
     end

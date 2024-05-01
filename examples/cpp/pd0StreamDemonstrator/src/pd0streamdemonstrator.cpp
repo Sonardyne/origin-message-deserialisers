@@ -63,7 +63,7 @@ int main(int argc, char** argv)
         }
         else
         {            
-            int recv_bytes = recv(fd, &read_buf[0], bytes_read, 0);
+            int recv_bytes = recv(fd, &read_buf[bytes_read], MAX_BUF_SIZE - bytes_read, 0);
 
             if (recv_bytes > 0)
             {
@@ -89,6 +89,16 @@ int main(int argc, char** argv)
                     int bytes_deserialised = pd0.deserialise(&read_buf[0], msg_len);
 
                     // do something simple with the data
+                    RDIVariableLeader*  pRDIVar  = (RDIVariableLeader*)pd0.get_section(RDIVariableLeader::Id);
+                    if(pRDIVar != NULL)
+                    {
+                        std::cout << "Ensemble Number = " << pRDIVar->EnsembleNumber << std::endl;
+                    }
+                    // update the number of undecoded bytes
+                    bytes_read -= msg_len;
+                    
+                    // shift buffer memory down ready for next record
+                    memcpy(&read_buf[0], &read_buf[msg_len], bytes_read);
                 }
             }
             else
